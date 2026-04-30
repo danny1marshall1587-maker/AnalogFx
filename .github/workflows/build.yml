@@ -50,19 +50,16 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libasound2-dev libjack-jackd2-dev \
-              libcurl4-openssl-dev libfreetype6-dev libx11-dev libxcomposite-dev \
-              libxcursor-dev libxext-dev libxinerama-dev libxrandr-dev libxrender-dev \
-              libwebkit2gtk-4.0-dev libglu1-mesa-dev mesa-common-dev
+          sudo apt-get install -y libasound2-dev libjack-jackd2-dev               libcurl4-openssl-dev libfreetype6-dev libx11-dev libxcomposite-dev               libxcursor-dev libxext-dev libxinerama-dev libxrandr-dev libxrender-dev               libwebkit2gtk-4.0-dev libglu1-mesa-dev mesa-common-dev
       - name: Configure CMake
-        run: cmake -B build
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
       - name: Build
         run: cmake --build build --config Release
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Linux-VST3
-          path: build/AnalogFx_artefacts/Release/VST3/AnalogFx.vst3
+          path: build/AnalogFx_artefacts/VST3/AnalogFx.vst3
 
   create_release:
     name: Create Release
