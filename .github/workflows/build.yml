@@ -63,3 +63,27 @@ jobs:
         with:
           name: Linux-VST3
           path: build/AnalogFx_artefacts/Release/VST3/AnalogFx.vst3
+
+  create_release:
+    name: Create Release
+    needs: [build_windows, build_macos, build_linux]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: AnalogFx v1.0.${{ github.run_number }}
+          draft: false
+          prerelease: false
+          files: |
+            Windows-VST3/*
+            macOS-VST3/*
+            macOS-AU/*
+            Linux-VST3/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
