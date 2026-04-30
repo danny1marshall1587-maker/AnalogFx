@@ -1,10 +1,11 @@
 #include "DirtEQDSP.h"
+#include <juce_audio_basics/juce_audio_basics.h>
 #include <algorithm>
 
 void SVFFilter::updateBell(double bellgain_dB, double cutoff, double Q, double srate)
 {
     double a = std::pow(10.0, bellgain_dB / 40.0);
-    g = std::tan(M_PI * cutoff / srate);
+    g = std::tan(juce::MathConstants<double>::pi * cutoff / srate);
     k = 1.0 / (Q * a);
     a1 = 1.0 / (1.0 + g * (g + k));
     a2 = g * a1;
@@ -16,7 +17,7 @@ void SVFFilter::updateBell(double bellgain_dB, double cutoff, double Q, double s
 
 void SVFFilter::updateLowpass(double cutoff, double Q, double srate)
 {
-    g = std::tan(0.5 * M_PI * cutoff / srate); // Oversampling factor accounted in g for LP
+    g = std::tan(0.5 * juce::MathConstants<double>::pi * cutoff / srate); // Oversampling factor accounted in g for LP
     k = 1.0 / Q;
     a1 = 1.0 / (1.0 + g * (g + k));
     a2 = g * a1;
@@ -28,7 +29,7 @@ void SVFFilter::updateLowpass(double cutoff, double Q, double srate)
 
 void SVFFilter::updateHighpass(double cutoff, double Q, double srate)
 {
-    g = std::tan(M_PI * cutoff / srate);
+    g = std::tan(juce::MathConstants<double>::pi * cutoff / srate);
     k = 1.0 / Q;
     a1 = 1.0 / (1.0 + g * (g + k));
     a2 = g * a1;

@@ -1,4 +1,5 @@
 #include "LA2ACompressor.h"
+#include <juce_audio_basics/juce_audio_basics.h>
 #include <cstdint>
 
 void LA2ACompressor::prepare(double newSampleRate)
@@ -23,7 +24,7 @@ void LA2ACompressor::prepare(double newSampleRate)
     // Calculate High Shelf (HSSLDR)
     double HS_tmpx = 16.0 + 85.24 * 1.20103;
     double HS_tmpy = std::floor(std::exp(HS_tmpx * std::log(1.059)) * 8.17742);
-    double HS_omega = 2.0 * M_PI * HS_tmpy / sampleRate;
+    double HS_omega = 2.0 * juce::MathConstants<double>::pi * HS_tmpy / sampleRate;
     double HS_K = std::tan(HS_omega / 2.0);
     double HS_Q = std::max(std::min(0.42, 4.0), 0.2);
     double HS_V = std::pow(10.0, -2.0 / 20.0);
@@ -41,7 +42,7 @@ void LA2ACompressor::prepare(double newSampleRate)
     // Calculate Low Shelf (LSSLDR)
     double LS_tmpx = 16.0 + 35.78 * 1.20103;
     double LS_tmpy = std::floor(std::exp(LS_tmpx * std::log(1.059)) * 8.17742);
-    double LS_omega = 2.0 * M_PI * LS_tmpy / sampleRate;
+    double LS_omega = 2.0 * juce::MathConstants<double>::pi * LS_tmpy / sampleRate;
     double LS_K = std::tan(LS_omega / 2.0);
     double LS_Q = std::max(std::min(0.282, 4.0), 0.2);
     double LS_V = std::pow(10.0, 0.0 / 20.0); // 1.0

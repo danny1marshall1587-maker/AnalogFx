@@ -27,7 +27,7 @@ private:
     double ic2eq = 0.0;
     double g = 0.0, k = 0.0, a1 = 0.0, a2 = 0.0, a3 = 0.0;
     double m0 = 0.0, m1 = 0.0, m2 = 0.0;
-    const double hp = M_PI * 0.5;
+    const double hp = juce::MathConstants<double>::pi * 0.5;
 };
 
 class DirtEQDSP

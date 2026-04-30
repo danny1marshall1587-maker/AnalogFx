@@ -1,4 +1,5 @@
 #include "PreampDSP.h"
+#include <juce_audio_basics/juce_audio_basics.h>
 
 void PreampDSP::prepare(double newSampleRate)
 {
@@ -60,7 +61,7 @@ void PreampDSP::process(float* leftChannel, float* rightChannel, int numSamples,
         else if (params.type == 3) // Modern
         {
             auto folder = [](double x) {
-                return std::sin(std::max(-M_PI, std::min(x * 1.5, M_PI)) * 0.5);
+                return std::sin(std::max(-juce::MathConstants<double>::pi, std::min(x * 1.5, juce::MathConstants<double>::pi)) * 0.5);
             };
             spl0 = folder(spl0);
             spl1 = folder(spl1);
