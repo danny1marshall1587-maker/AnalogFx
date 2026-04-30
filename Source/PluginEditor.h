@@ -135,15 +135,15 @@ public:
 private:
     AnalogFxAudioProcessor& audioProcessor;
     
-    ImageKnobLookAndFeel telefunkenLaf {BinaryData::pmod_pree_knob_png, BinaryData::pmod_pree_knob_pngSize, BinaryData::knob_highlight_png, BinaryData::knob_highlight_pngSize};
+    ImageKnobLookAndFeel telefunkenLaf {BinaryData::pmod_pre_knob_png, BinaryData::pmod_pre_knob_pngSize, BinaryData::knob_highlight_png, BinaryData::knob_highlight_pngSize};
     ImageKnobLookAndFeel neveLaf {BinaryData::neve_knob_png, BinaryData::neve_knob_pngSize, BinaryData::knob_highlight_png, BinaryData::knob_highlight_pngSize};
-    ImageKnobLookAndFeel modPreLaf {BinaryData::moden_pre_knob_png, BinaryData::moden_pre_knob_pngSize, BinaryData::knob_highlight_png, BinaryData::knob_highlight_pngSize};
+    ImageKnobLookAndFeel modPreLaf {BinaryData::modern_pre_knob_png, BinaryData::modern_pre_knob_pngSize, BinaryData::knob_highlight_png, BinaryData::knob_highlight_pngSize};
     ImageKnobLookAndFeel nc76Laf {BinaryData::nc76_knob_png, BinaryData::nc76_knob_pngSize, BinaryData::knob_highlight_png, BinaryData::knob_highlight_pngSize};
     ImageKnobLookAndFeel la2aLaf {BinaryData::la2a_knob_png, BinaryData::la2a_knob_pngSize, BinaryData::knob_highlight_png, BinaryData::knob_highlight_pngSize};
     ImageKnobLookAndFeel fairchildLaf {BinaryData::fairchild_knob_png, BinaryData::fairchild_knob_pngSize, BinaryData::knob_highlight_png, BinaryData::knob_highlight_pngSize};
     ImageKnobLookAndFeel modCompLaf {BinaryData::modern_comp_knob_png, BinaryData::modern_comp_knob_pngSize, BinaryData::knob_highlight_png, BinaryData::knob_highlight_pngSize};
     ImageKnobLookAndFeel dirtEqLaf {BinaryData::dirt_eq_knob_png, BinaryData::dirt_eq_knob_pngSize, BinaryData::knob_highlight_png, BinaryData::knob_highlight_pngSize};
-    ImageKnobLookAndFeel pultecLaf {BinaryData::pullteq_knob_png, BinaryData::pullteq_knob_pngSize, BinaryData::knob_highlight_png, BinaryData::knob_highlight_pngSize};
+    ImageKnobLookAndFeel pultecLaf {BinaryData::pultec_knob_png, BinaryData::pultec_knob_pngSize, BinaryData::knob_highlight_png, BinaryData::knob_highlight_pngSize};
     ImageKnobLookAndFeel modEqLaf {BinaryData::modern_eq_knob_png, BinaryData::modern_eq_knob_pngSize, BinaryData::knob_highlight_png, BinaryData::knob_highlight_pngSize};
     ImageKnobLookAndFeel outputLaf {BinaryData::output_knob_png, BinaryData::output_knob_pngSize, BinaryData::knob_highlight_png, BinaryData::knob_highlight_pngSize};
 

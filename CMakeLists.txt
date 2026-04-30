@@ -6,7 +6,8 @@ include(FetchContent)
 FetchContent_Declare(
     juce
     GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
-    GIT_TAG 7.0.5
+    GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
+    GIT_TAG 7.0.12
 )
 FetchContent_MakeAvailable(juce)
 
@@ -32,24 +33,24 @@ juce_add_binary_data(AnalogFx_Assets
     NAMESPACE "BinaryData"
     SOURCES
         Assets/final/telefunken_bg.png
-        Assets/final/neve-bg.png
+        Assets/final/neve_bg.png
         Assets/final/modern_pre_bg.png
         Assets/final/nc76_bg.png
         Assets/final/la2a_bg.png
         Assets/final/fairchild_bg.png
         Assets/final/modern_comp_bg.png
         Assets/final/dirt_eq_bg.png
-        Assets/final/pullteq_bg.png
+        Assets/final/pultec_bg.png
         Assets/final/modern_eq_bg.png
-        Assets/final/pmod_pree_knob.png
+        Assets/final/pmod_pre_knob.png
         Assets/final/neve_knob.png
-        Assets/final/moden_pre_knob.png
+        Assets/final/modern_pre_knob.png
         Assets/final/nc76_knob.png
         Assets/final/la2a_knob.png
         Assets/final/fairchild_knob.png
         Assets/final/modern_comp_knob.png
         Assets/final/dirt_eq_knob.png
-        Assets/final/pullteq_knob.png
+        Assets/final/pultec_knob.png
         Assets/final/modern_eq_knob.png
         Assets/final/knob_highlight.png
         Assets/final/switch_on.png
