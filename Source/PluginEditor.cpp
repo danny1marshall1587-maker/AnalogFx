@@ -7,7 +7,7 @@ AnalogFxAudioProcessorEditor::AnalogFxAudioProcessorEditor(AnalogFxAudioProcesso
 
 
     bgTelefunken = juce::ImageCache::getFromMemory(BinaryData::telefunken_bg_png, BinaryData::telefunken_bg_pngSize);
-    bgNevePre = juce::ImageCache::getFromMemory(BinaryData::nevebg_png, BinaryData::nevebg_pngSize);
+    bgNevePre = juce::ImageCache::getFromMemory(BinaryData::neve_bg_png, BinaryData::neve_bg_pngSize);
     bgModernPre = juce::ImageCache::getFromMemory(BinaryData::modern_pre_bg_png, BinaryData::modern_pre_bg_pngSize);
     bgPultec = juce::ImageCache::getFromMemory(BinaryData::pullteq_bg_png, BinaryData::pullteq_bg_pngSize);
     bgModEq = juce::ImageCache::getFromMemory(BinaryData::modern_eq_bg_png, BinaryData::modern_eq_bg_pngSize);
