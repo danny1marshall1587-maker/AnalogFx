@@ -11,13 +11,13 @@ jobs:
     name: Build Windows
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Configure CMake
         run: cmake -B build -G "Visual Studio 17 2022" -A x64
       - name: Build
         run: cmake --build build --config Release
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Windows-VST3
           path: build/AnalogFx_artefacts/Release/VST3/AnalogFx.vst3
@@ -26,18 +26,18 @@ jobs:
     name: Build macOS
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Configure CMake
         run: cmake -B build -G Xcode
       - name: Build
         run: cmake --build build --config Release
       - name: Upload VST3
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: macOS-VST3
           path: build/AnalogFx_artefacts/Release/VST3/AnalogFx.vst3
       - name: Upload AU
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: macOS-AU
           path: build/AnalogFx_artefacts/Release/AU/AnalogFx.component
@@ -46,7 +46,7 @@ jobs:
     name: Build Linux
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -59,7 +59,7 @@ jobs:
       - name: Build
         run: cmake --build build --config Release
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Linux-VST3
           path: build/AnalogFx_artefacts/Release/VST3/AnalogFx.vst3
@@ -71,7 +71,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
       
       - name: Create Release
         uses: softprops/action-gh-release@v1
