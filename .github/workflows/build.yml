@@ -1,0 +1,65 @@
+name: Build Audio Plugin
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build_windows:
+    name: Build Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Configure CMake
+        run: cmake -B build -G "Visual Studio 17 2022" -A x64
+      - name: Build
+        run: cmake --build build --config Release
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: Windows-VST3
+          path: build/AnalogFx_artefacts/Release/VST3/AnalogFx.vst3
+
+  build_macos:
+    name: Build macOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Configure CMake
+        run: cmake -B build -G Xcode
+      - name: Build
+        run: cmake --build build --config Release
+      - name: Upload VST3
+        uses: actions/upload-artifact@v3
+        with:
+          name: macOS-VST3
+          path: build/AnalogFx_artefacts/Release/VST3/AnalogFx.vst3
+      - name: Upload AU
+        uses: actions/upload-artifact@v3
+        with:
+          name: macOS-AU
+          path: build/AnalogFx_artefacts/Release/AU/AnalogFx.component
+
+  build_linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libjack-jackd2-dev \
+              libcurl4-openssl-dev libfreetype6-dev libx11-dev libxcomposite-dev \
+              libxcursor-dev libxext-dev libxinerama-dev libxrandr-dev libxrender-dev \
+              libwebkit2gtk-4.0-dev libglu1-mesa-dev mesa-common-dev
+      - name: Configure CMake
+        run: cmake -B build
+      - name: Build
+        run: cmake --build build --config Release
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: Linux-VST3
+          path: build/AnalogFx_artefacts/Release/VST3/AnalogFx.vst3
