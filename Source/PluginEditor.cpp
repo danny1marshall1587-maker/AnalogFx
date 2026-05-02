@@ -1,10 +1,77 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+GlassmorphismComboBoxLookAndFeel::GlassmorphismComboBoxLookAndFeel()
+{
+    setColour(juce::ComboBox::backgroundColourId, juce::Colour(0x884a0080)); // Translucent purple
+    setColour(juce::ComboBox::textColourId, juce::Colours::white);
+    setColour(juce::ComboBox::arrowColourId, juce::Colours::white.withAlpha(0.7f));
+    setColour(juce::PopupMenu::backgroundColourId, juce::Colour(0xee2d004d)); // Darker translucent purple
+    setColour(juce::PopupMenu::textColourId, juce::Colours::white);
+    setColour(juce::PopupMenu::highlightedBackgroundColourId, juce::Colour(0xaa8000ff)); // Bright purple highlight
+    setColour(juce::PopupMenu::highlightedTextColourId, juce::Colours::white);
+}
+
+void GlassmorphismComboBoxLookAndFeel::drawComboBox(juce::Graphics& g, int width, int height, bool isButtonDown, int buttonX, int buttonY, int buttonW, int buttonH, juce::ComboBox& box)
+{
+    juce::ignoreUnused(isButtonDown, buttonX, buttonY, buttonW, buttonH);
+    auto bounds = juce::Rectangle<float>(0, 0, width, height).reduced(1.0f);
+    float cornerSize = height * 0.5f; // fully rounded
+
+    g.setColour(box.findColour(juce::ComboBox::backgroundColourId));
+    g.fillRoundedRectangle(bounds, cornerSize);
+
+    // Subtle glowing border
+    g.setColour(juce::Colours::white.withAlpha(0.3f));
+    g.drawRoundedRectangle(bounds, cornerSize, 1.0f);
+
+    // Draw Arrow
+    juce::Path path;
+    path.addTriangle(width - 20.0f, height * 0.4f, width - 10.0f, height * 0.4f, width - 15.0f, height * 0.6f);
+    g.setColour(box.findColour(juce::ComboBox::arrowColourId));
+    g.fillPath(path);
+}
+
+void GlassmorphismComboBoxLookAndFeel::positionComboBoxText(juce::ComboBox& box, juce::Label& label)
+{
+    label.setBounds(10, 0, box.getWidth() - 30, box.getHeight());
+    label.setFont(juce::Font(14.0f, juce::Font::bold));
+    label.setJustificationType(juce::Justification::centred);
+}
+
+void GlassmorphismComboBoxLookAndFeel::drawPopupMenuBackground(juce::Graphics& g, int width, int height)
+{
+    auto bounds = juce::Rectangle<float>(0, 0, width, height);
+    g.setColour(findColour(juce::PopupMenu::backgroundColourId));
+    g.fillRoundedRectangle(bounds, 8.0f);
+    g.setColour(juce::Colours::white.withAlpha(0.2f));
+    g.drawRoundedRectangle(bounds.reduced(0.5f), 8.0f, 1.0f);
+}
+
+void GlassmorphismComboBoxLookAndFeel::drawPopupMenuItem(juce::Graphics& g, const juce::Rectangle<int>& area, const bool isSeparator, const bool isActive, const bool isHighlighted, const bool isTicked, const bool hasSubMenu, const juce::String& text, const juce::String& shortcutKeyText, const juce::Drawable* icon, const juce::Colour* const textColourToUse)
+{
+    juce::ignoreUnused(isTicked, hasSubMenu, shortcutKeyText, icon);
+    if (isSeparator)
+    {
+        g.setColour(juce::Colours::white.withAlpha(0.15f));
+        g.fillRect(area.withSizeKeepingCentre(area.getWidth() - 10, 1));
+        return;
+    }
+
+    if (isHighlighted && isActive)
+    {
+        g.setColour(findColour(juce::PopupMenu::highlightedBackgroundColourId));
+        g.fillRoundedRectangle(area.toFloat().reduced(2.0f), 4.0f);
+    }
+
+    g.setColour(isActive ? findColour(juce::PopupMenu::textColourId) : juce::Colours::grey);
+    g.setFont(juce::Font(14.0f, juce::Font::plain));
+    g.drawText(text, area.reduced(10, 0), juce::Justification::centredLeft, true);
+}
+
 AnalogFxAudioProcessorEditor::AnalogFxAudioProcessorEditor(AnalogFxAudioProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p)
 {
-
 
     bgTelefunken = juce::ImageCache::getFromMemory(BinaryData::telefunken_bg_png, BinaryData::telefunken_bg_pngSize);
     bgNevePre = juce::ImageCache::getFromMemory(BinaryData::neve_bg_png, BinaryData::neve_bg_pngSize);
@@ -17,6 +84,17 @@ AnalogFxAudioProcessorEditor::AnalogFxAudioProcessorEditor(AnalogFxAudioProcesso
     bgFairchild = juce::ImageCache::getFromMemory(BinaryData::fairchild_bg_png, BinaryData::fairchild_bg_pngSize);
     bgDirtEq = juce::ImageCache::getFromMemory(BinaryData::dirt_eq_bg_png, BinaryData::dirt_eq_bg_pngSize);
     bgOutput = juce::ImageCache::getFromMemory(BinaryData::output_bg_png, BinaryData::output_bg_pngSize);
+
+    // Setup Presets Directory
+    presetDirectory = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
+                        .getChildFile("AnalogFx").getChildFile("Presets");
+    if (!presetDirectory.exists())
+        presetDirectory.createDirectory();
+
+    addAndMakeVisible(presetSelector);
+    presetSelector.setLookAndFeel(&presetLaf);
+    presetSelector.addListener(this);
+    loadUserPresets();
 
     addAndMakeVisible(preampSelector);
     preampSelector.addItemList({"Bypass", "Telefunken", "Neve", "Modern"}, 1);
@@ -254,6 +332,41 @@ void AnalogFxAudioProcessorEditor::buildButton(const juce::String& paramId, cons
 
 void AnalogFxAudioProcessorEditor::comboBoxChanged(juce::ComboBox* cb)
 {
+    if (cb == &presetSelector) {
+        juce::String selection = presetSelector.getText();
+        if (selection == "Save Current Preset...") {
+            presetSelector.setSelectedItemIndex(-1, juce::dontSendNotification);
+            presetSelector.setTextWhenNothingSelected("Select Preset...");
+            saveUserPreset();
+        } else if (selection == "Open Presets Folder...") {
+            presetSelector.setSelectedItemIndex(-1, juce::dontSendNotification);
+            presetSelector.setTextWhenNothingSelected("Select Preset...");
+            presetDirectory.revealToUser();
+        } else if (presetSelector.getSelectedId() > 0) {
+            int id = presetSelector.getSelectedId();
+            int numFactory = audioProcessor.getNumPrograms();
+            if (id <= numFactory) {
+                // Factory preset selected
+                audioProcessor.setCurrentProgram(id - 1);
+            } else {
+                // User preset selected
+                int userIndex = id - numFactory - 1; // -1 because ID counts from 1
+                if (userIndex >= 0 && userIndex < userPresets.size()) {
+                    juce::File f = presetDirectory.getChildFile(userPresets[userIndex] + ".xml");
+                    if (f.existsAsFile()) {
+                        std::unique_ptr<juce::XmlElement> xml = juce::XmlDocument::parse(f);
+                        if (xml != nullptr) {
+                            if (xml->hasTagName(audioProcessor.apvts.state.getType())) {
+                                audioProcessor.apvts.replaceState(juce::ValueTree::fromXml(*xml));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return;
+    }
+
     if (cb == &scaleSelector)
     {
         int idx = scaleSelector.getSelectedItemIndex();
@@ -274,7 +387,7 @@ void AnalogFxAudioProcessorEditor::updateVisibility()
     int eqType = eqSelector.getSelectedId();
 
     int baseW = 800;
-    int baseH = (eqType == 2) ? 1500 : 1200;
+    int baseH = (eqType == 2) ? 1550 : 1250;
 
     int targetW = (int)(baseW * currentScale);
     int targetH = (int)(baseH * currentScale);
@@ -401,15 +514,22 @@ void AnalogFxAudioProcessorEditor::paint(juce::Graphics& g)
     int eqType = eqSelector.getSelectedId();
     int outType = outputSelector.getSelectedId();
 
+    int taskBarH = (int)(50 * currentScale);
     int preH = (int)(300 * currentScale);
     int compH = (int)(300 * currentScale);
     int eqH = (eqType == 2) ? (int)(600 * currentScale) : (int)(300 * currentScale);
     int outH = (int)(300 * currentScale);
 
-    int preY = 0;
-    int compY = preH;
+    int preY = taskBarH;
+    int compY = preY + preH;
     int eqY = compY + compH;
     int outY = eqY + eqH;
+
+    // Draw Task Bar Background
+    g.setColour(juce::Colour(0xff0d0d0d)); // Very dark grey/black
+    g.fillRect(0, 0, w, taskBarH);
+    g.setColour(juce::Colour(0xff222222));
+    g.drawHorizontalLine(taskBarH - 1, 0.0f, (float)w);
 
     // Draw Preamp BG
     if (preType == 2 && s_bgTelefunken.isValid()) g.drawImageAt(s_bgTelefunken, 0, preY);
@@ -499,13 +619,14 @@ void AnalogFxAudioProcessorEditor::resized()
     auto selectorH = (int)(24 * currentScale);
 
     // Variable Section Heights
+    int taskBarH = (int)(50 * currentScale);
     int preH = (int)(300 * currentScale);
     int compH = (int)(300 * currentScale);
     int eqH = (eqSelector.getSelectedId() == 2) ? (int)(600 * currentScale) : (int)(300 * currentScale);
     int outH = (int)(300 * currentScale);
 
-    int preY = 0;
-    int compY = preH;
+    int preY = taskBarH;
+    int compY = preY + preH;
     int eqY = compY + compH;
     int outY = eqY + eqH;
 
@@ -525,6 +646,11 @@ void AnalogFxAudioProcessorEditor::resized()
     scaleBg(bgPultec, s_bgPultec, w, eqH);
     scaleBg(bgModEq, s_bgModEq, w, eqH);
     scaleBg(bgOutput, s_bgOutput, w, outH);
+
+    // Place Preset Selector in top task bar
+    int presetW = (int)(250 * currentScale);
+    int presetH = (int)(28 * currentScale);
+    presetSelector.setBounds((w - presetW) / 2, (taskBarH - presetH) / 2, presetW, presetH);
 
     preampSelector.setBounds(margin, preY + (int)(20 * currentScale), selectorW, selectorH);
     compSelector.setBounds(margin, compY + (int)(20 * currentScale), selectorW, selectorH);

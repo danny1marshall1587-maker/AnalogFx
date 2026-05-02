@@ -121,6 +121,16 @@ public:
     }
 };
 
+class GlassmorphismComboBoxLookAndFeel : public juce::LookAndFeel_V4
+{
+public:
+    GlassmorphismComboBoxLookAndFeel();
+    void drawComboBox(juce::Graphics& g, int width, int height, bool isButtonDown, int buttonX, int buttonY, int buttonW, int buttonH, juce::ComboBox& box) override;
+    void drawPopupMenuBackground(juce::Graphics& g, int width, int height) override;
+    void drawPopupMenuItem(juce::Graphics& g, const juce::Rectangle<int>& area, const bool isSeparator, const bool isActive, const bool isHighlighted, const bool isTicked, const bool hasSubMenu, const juce::String& text, const juce::String& shortcutKeyText, const juce::Drawable* icon, const juce::Colour* const textColourToUse) override;
+    void positionComboBoxText(juce::ComboBox& box, juce::Label& label) override;
+};
+
 class AnalogFxAudioProcessorEditor : public juce::AudioProcessorEditor, private juce::ComboBox::Listener, private juce::Timer
 {
 public:
@@ -163,6 +173,13 @@ private:
     juce::Image s_bgTelefunken, s_bgNevePre, s_bgModernPre;
     juce::Image s_bgPultec, s_bgModEq, s_bgModComp;
     juce::Image s_bgNC76, s_bgLA2A, s_bgFairchild, s_bgDirtEq, s_bgOutput;
+
+    juce::ComboBox presetSelector;
+    GlassmorphismComboBoxLookAndFeel presetLaf;
+    juce::File presetDirectory;
+    juce::StringArray userPresets;
+    void loadUserPresets();
+    void saveUserPreset();
 
     // Module Selectors
     juce::ComboBox preampSelector;
