@@ -161,6 +161,14 @@ public:
     std::atomic<float> compGR      { 0.0f };
 
 private:
+    struct Preset {
+        juce::String name;
+        std::vector<std::pair<juce::String, float>> parameters;
+    };
+    std::vector<Preset> presets;
+
+    void initializePresets();
+
     juce::AudioProcessorValueTreeState::ParameterLayout createParameters();
     
     PreampDSP preamp;

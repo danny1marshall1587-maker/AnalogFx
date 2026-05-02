@@ -16,6 +16,8 @@ AnalogFxAudioProcessor::AnalogFxAudioProcessor()
 #endif
     apvts(*this, nullptr, "Parameters", createParameters())
 {
+    initializePresets();
+    
     preTypePtr = apvts.getRawParameterValue("preamp_type");
     preDrivePtr = apvts.getRawParameterValue("preamp_drive");
     preTrimPtr = apvts.getRawParameterValue("preamp_trim");
@@ -246,11 +248,39 @@ bool AnalogFxAudioProcessor::producesMidi() const { return false; }
 bool AnalogFxAudioProcessor::isMidiEffect() const { return false; }
 double AnalogFxAudioProcessor::getTailLengthSeconds() const { return 0.0; }
 
-int AnalogFxAudioProcessor::getNumPrograms() { return 1; }
+int AnalogFxAudioProcessor::getNumPrograms() { 
+    return presets.empty() ? 1 : (int)presets.size(); 
+}
 int AnalogFxAudioProcessor::getCurrentProgram() { return 0; }
-void AnalogFxAudioProcessor::setCurrentProgram(int index) {}
-const juce::String AnalogFxAudioProcessor::getProgramName(int index) { return {}; }
-void AnalogFxAudioProcessor::changeProgramName(int index, const juce::String& newName) {}
+void AnalogFxAudioProcessor::setCurrentProgram(int index) {
+    if (index >= 0 && index < (int)presets.size()) {
+        for (const auto& param : presets[index].parameters) {
+            if (auto* p = apvts.getParameter(param.first)) {
+                // p->setValueNotifyingHost takes a normalized 0.0 to 1.0 value
+                // Since our maps use the actual float values (e.g. frequency 1000.0),
+                // we should convert using the parameter's range
+                if (auto* floatParam = dynamic_cast<juce::AudioParameterFloat*>(p)) {
+                    floatParam->setValueNotifyingHost(floatParam->convertTo0to1(param.second));
+                }
+                else if (auto* choiceParam = dynamic_cast<juce::AudioParameterChoice*>(p)) {
+                    choiceParam->setValueNotifyingHost(choiceParam->convertTo0to1(param.second));
+                }
+                else if (auto* boolParam = dynamic_cast<juce::AudioParameterBool*>(p)) {
+                    boolParam->setValueNotifyingHost(boolParam->convertTo0to1(param.second));
+                }
+            }
+        }
+    }
+}
+const juce::String AnalogFxAudioProcessor::getProgramName(int index) {
+    if (index >= 0 && index < (int)presets.size()) {
+        return presets[index].name;
+    }
+    return "Default";
+}
+void AnalogFxAudioProcessor::changeProgramName(int index, const juce::String& newName) {
+    juce::ignoreUnused(index, newName);
+}
 
 void AnalogFxAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
@@ -538,3 +568,77 @@ juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new AnalogFxAudioProcessor();
 }
+
+void AnalogFxAudioProcessor::initializePresets()
+{
+    // 1. The Dr. Pepper 1176 (Vocals)
+    presets.push_back({"Vocals: Dr. Pepper 1176", {
+        {"preamp_type", 3.0f}, {"preamp_drive", 5.0f},
+        {"comp_type", 1.0f}, {"nc76_attack", 100.0f}, {"nc76_release", 200.0f}, {"nc76_ratio", 0.0f}, {"nc76_in_gain", 1.5f},
+        {"eq_type", 2.0f}, {"nv_hf_gain", 2.0f}, {"nv_hpf_freq", 80.0f}, {"nv_hpf_on", 1.0f}, {"nv_hf_on", 1.0f}
+    }});
+
+    // 2. Silky LA-2A Ballad (Vocals)
+    presets.push_back({"Vocals: Silky LA-2A", {
+        {"preamp_type", 1.0f}, {"preamp_drive", 3.0f},
+        {"comp_type", 2.0f}, {"la2a_peak", 60.0f}, {"la2a_gain", 40.0f}, {"la2a_ratio", 0.0f},
+        {"eq_type", 3.0f}, {"pu_peak", 4.0f}, {"pu_p_boost", 4.0f}, {"pu_lsf", 3.0f}, {"pu_l_atten", 2.0f}
+    }});
+
+    // 3. Aggressive Rock Vocal
+    presets.push_back({"Vocals: Aggressive Rock", {
+        {"preamp_type", 2.0f}, {"preamp_drive", 15.0f},
+        {"comp_type", 1.0f}, {"nc76_ratio", 4.0f}, {"nc76_attack", 20.0f}, {"nc76_release", 100.0f}, {"nc76_in_gain", 2.0f},
+        {"eq_type", 4.0f}, {"mq_m1_freq", 300.0f}, {"mq_m1_gain", -3.0f}, {"mq_m2_freq", 3000.0f}, {"mq_m2_gain", -2.0f}
+    }});
+
+    // 4. Pultec Bass Trick
+    presets.push_back({"Bass: Pultec Trick", {
+        {"preamp_type", 2.0f}, {"preamp_drive", 8.0f},
+        {"comp_type", 2.0f}, {"la2a_peak", 40.0f}, {"la2a_gain", 45.0f}, {"la2a_ratio", 0.0f},
+        {"eq_type", 3.0f}, {"pu_lsf", 2.0f}, {"pu_l_boost", 5.0f}, {"pu_l_atten", 4.0f}
+    }});
+
+    // 5. Punchy Picked Bass
+    presets.push_back({"Bass: Punchy Picked", {
+        {"preamp_type", 3.0f}, {"preamp_drive", 10.0f},
+        {"comp_type", 1.0f}, {"nc76_ratio", 0.0f}, {"nc76_attack", 400.0f}, {"nc76_release", 50.0f},
+        {"eq_type", 1.0f}, {"band3_freq", 1200.0f}, {"band3_gain", 3.0f}, {"dirt_eq_on", 1.0f}, {"drive_db", 6.0f}
+    }});
+
+    // 6. Acoustic Shimmer
+    presets.push_back({"Guitar: Acoustic Shimmer", {
+        {"preamp_type", 1.0f}, {"preamp_drive", 2.0f},
+        {"comp_type", 3.0f}, {"fc_l_thresh", -2.0f}, {"fc_r_thresh", -2.0f}, {"fc_l_time", 0.0f}, {"fc_r_time", 0.0f},
+        {"eq_type", 3.0f}, {"pu_peak", 5.0f}, {"pu_p_boost", 5.0f}, {"pu_lsf", 3.0f}, {"pu_l_atten", 3.0f}
+    }});
+
+    // 7. Electric Lead Push
+    presets.push_back({"Guitar: Electric Lead", {
+        {"preamp_type", 2.0f}, {"preamp_drive", 18.0f},
+        {"comp_type", 1.0f}, {"nc76_ratio", 1.0f}, {"nc76_attack", 200.0f}, {"nc76_release", 150.0f},
+        {"eq_type", 2.0f}, {"nv_mf_freq", 3200.0f}, {"nv_mf_gain", 4.0f}, {"nv_mf_on", 1.0f}, {"nv_hpf_freq", 160.0f}, {"nv_hpf_on", 1.0f}
+    }});
+
+    // 8. Fairchild Drum Bus
+    presets.push_back({"Drums: Fairchild Bus", {
+        {"preamp_type", 3.0f}, {"preamp_drive", 6.0f},
+        {"comp_type", 3.0f}, {"fc_l_thresh", -5.0f}, {"fc_r_thresh", -5.0f}, {"fc_l_time", 1.0f}, {"fc_r_time", 1.0f}, {"fc_agc", 1.0f},
+        {"eq_type", 4.0f}, {"mq_l_gain", 2.0f}, {"mq_h_gain", 2.0f}
+    }});
+
+    // 9. Smash Room Mic
+    presets.push_back({"Drums: Smash Room", {
+        {"preamp_type", 2.0f}, {"preamp_drive", 24.0f},
+        {"comp_type", 1.0f}, {"nc76_ratio", 4.0f}, {"nc76_attack", 20.0f}, {"nc76_release", 50.0f}, {"nc76_in_gain", 3.6f},
+        {"eq_type", 1.0f}, {"dirt_eq_on", 1.0f}, {"drive_db", 12.0f}
+    }});
+
+    // 10. Fat Kick Drum
+    presets.push_back({"Drums: Fat Kick", {
+        {"preamp_type", 1.0f}, {"preamp_drive", 12.0f},
+        {"comp_type", 4.0f}, {"mc_thresh", -12.0f}, {"mc_ratio", 4.0f}, {"mc_attack", 15.0f},
+        {"eq_type", 3.0f}, {"pu_lsf", 2.0f}, {"pu_l_boost", 6.0f}, {"pu_l_atten", 3.0f}, {"pu_peak", 0.0f}, {"pu_p_boost", 4.0f}
+    }});
+}
+
