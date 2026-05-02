@@ -745,3 +745,59 @@ void AnalogFxAudioProcessorEditor::resized()
         }
     }
 }
+
+void AnalogFxAudioProcessorEditor::loadUserPresets()
+{
+    presetSelector.clear();
+    presetSelector.setTextWhenNothingSelected("Select Preset...");
+
+    int itemId = 1;
+    
+    // 1. Factory Presets
+    presetSelector.addSectionHeading("Factory Presets");
+    int numFactory = audioProcessor.getNumPrograms();
+    for (int i = 0; i < numFactory; ++i) {
+        presetSelector.addItem(audioProcessor.getProgramName(i), itemId++);
+    }
+    
+    presetSelector.addSeparator();
+
+    // 2. User Presets
+    presetSelector.addSectionHeading("User Presets");
+    userPresets.clear();
+    juce::Array<juce::File> files = presetDirectory.findChildFiles(juce::File::findFiles, false, "*.xml");
+    for (auto& f : files) {
+        userPresets.add(f.getFileNameWithoutExtension());
+        presetSelector.addItem(f.getFileNameWithoutExtension(), itemId++);
+    }
+
+    presetSelector.addSeparator();
+
+    // 3. Actions
+    presetSelector.addItem("Save Current Preset...", itemId++);
+    presetSelector.addItem("Open Presets Folder...", itemId++);
+}
+
+void AnalogFxAudioProcessorEditor::saveUserPreset()
+{
+    juce::AlertWindow* alert = new juce::AlertWindow("Save Preset", "Enter a name for your preset:", juce::AlertWindow::NoIcon);
+    alert->addTextEditor("Preset Name", "My Preset");
+    alert->addButton("Save", 1, juce::KeyPress(juce::KeyPress::returnKey));
+    alert->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+
+    alert->enterModalState(true, juce::ModalCallbackFunction::create([this, alert](int result) {
+        if (result == 1) {
+            auto name = alert->getTextEditorContents("Preset Name");
+            if (name.isNotEmpty()) {
+                auto file = presetDirectory.getChildFile(name + ".xml");
+                auto state = audioProcessor.apvts.copyState();
+                std::unique_ptr<juce::XmlElement> xml(state.createXml());
+                if (xml != nullptr) {
+                    xml->writeTo(file);
+                    loadUserPresets();
+                }
+            }
+        }
+        // Since we pass true as the first argument, the AlertWindow deletes itself.
+    }));
+}
