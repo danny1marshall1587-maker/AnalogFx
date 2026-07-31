@@ -37,14 +37,18 @@ public:
 
                 if (params.type == 1) // Vintage Tape
                 {
-                    auto tapeShaper = [](double x) { return x - (0.15 * x * x * x); };
+                    auto tapeShaper = [](double x) {
+                        double ax = std::abs(x);
+                        if (ax < 0.6) return x;
+                        return (x > 0 ? 1.0 : -1.0) * (0.6 + 0.35 * std::tanh((ax - 0.6) / 0.35));
+                    };
                     spl0 = tapeShaper(spl0);
                     spl1 = tapeShaper(spl1);
                 }
                 else if (params.type == 2) // British Iron
                 {
                     auto transShaper = [](double x) {
-                        return std::tanh(x + 0.1 * x * std::abs(x));
+                        return std::tanh(x * 0.9 + 0.08 * x * std::abs(x));
                     };
                     spl0 = transShaper(spl0);
                     spl1 = transShaper(spl1);
@@ -52,8 +56,8 @@ public:
                 else if (params.type == 3) // Valve Summing
                 {
                     auto valveShaper = [](double x) {
-                        double x2 = x * x;
-                        return (x + 0.12 * x2 * (x > 0 ? 1 : -1)) / 1.12;
+                        double sat = std::tanh(x + 0.1 * x * std::abs(x));
+                        return sat / 1.05;
                     };
                     spl0 = valveShaper(spl0);
                     spl1 = valveShaper(spl1);
@@ -62,8 +66,8 @@ public:
                 {
                     auto polishShaper = [](double x) {
                         double ax = std::abs(x);
-                        if (ax < 0.8) return x;
-                        return (x > 0 ? 1 : -1) * (0.8 + 0.2 * std::tanh((ax - 0.8) / 0.2));
+                        if (ax < 0.75) return x;
+                        return (x > 0 ? 1.0 : -1.0) * (0.75 + 0.22 * std::tanh((ax - 0.75) / 0.22));
                     };
                     spl0 = polishShaper(spl0);
                     spl1 = polishShaper(spl1);
