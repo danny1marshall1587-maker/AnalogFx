@@ -15,17 +15,10 @@ void PreampDSP::process(float* leftChannel, float* rightChannel, int numSamples,
 {
     if (params.type == 0) return; // Bypass
 
-    // hardware-style logarithmic drive mapping
-    // 0-50% (character): 0dB to +12dB
-    // 50-100% (distortion): +12dB to +36dB
-    double driveDb = 0.0;
-    if (params.drive <= 50.0) driveDb = (params.drive / 50.0) * 12.0;
-    else driveDb = 12.0 + ((params.drive - 50.0) / 50.0) * 24.0;
-    
+    // Smooth, musical drive mapping: 0 to +18 dB maximum
+    double driveDb = (params.drive / 100.0) * 18.0;
     double driveScale = std::pow(10.0, driveDb / 20.0);
     double trimScale = std::pow(10.0, params.trim / 20.0);
-    double invDriveSqrt = 1.0 / std::sqrt(std::max(0.001, driveScale));
-
 
     for (int i = 0; i < numSamples; ++i)
     {
@@ -40,31 +33,35 @@ void PreampDSP::process(float* leftChannel, float* rightChannel, int numSamples,
         spl0 *= driveScale;
         spl1 *= driveScale;
 
-        if (params.type == 1) // Telefunken
+        if (params.type == 1) // Telefunken (Vintage Tube)
         {
             auto tubeShaper = [&](double x) {
-                double absX = std::abs(x);
-                if (absX < 0.0001) return x;
-                return x / (1.0 + absX * 0.5);
+                // Soft asymmetric tube saturation (rich 2nd harmonic, non-harsh)
+                double saturated = std::tanh(x + 0.12 * x * std::abs(x));
+                return saturated;
             };
             spl0 = tubeShaper(spl0);
             spl1 = tubeShaper(spl1);
         }
-        else if (params.type == 2) // Neve
+        else if (params.type == 2) // Neve (Class-A Console)
         {
             auto neveShaper = [&](double x) {
-                return std::tanh(x + 0.05 * x * std::abs(x));
+                // Class-A transformer saturation with soft knee compression
+                return std::tanh(x * 0.95 + 0.05 * x * x * (x > 0 ? 1.0 : -1.0));
             };
             spl0 = neveShaper(spl0);
             spl1 = neveShaper(spl1);
         }
-        else if (params.type == 3) // Modern
+        else if (params.type == 3) // Modern (Tape & Saturation)
         {
-            auto folder = [](double x) {
-                return std::sin(std::max(-juce::MathConstants<double>::pi, std::min(x * 1.5, juce::MathConstants<double>::pi)) * 0.5);
+            auto tapeShaper = [](double x) {
+                // Smooth triode/tape soft saturation curve
+                double ax = std::abs(x);
+                if (ax < 0.7) return x;
+                return (x > 0 ? 1.0 : -1.0) * (0.7 + 0.3 * std::tanh((ax - 0.7) / 0.3));
             };
-            spl0 = folder(spl0);
-            spl1 = folder(spl1);
+            spl0 = tapeShaper(spl0);
+            spl1 = tapeShaper(spl1);
         }
 
         if (params.auto_level) {
@@ -82,10 +79,11 @@ void PreampDSP::process(float* leftChannel, float* rightChannel, int numSamples,
             spl0 *= cachedMakeup;
             spl1 *= cachedMakeup;
         } else {
-            spl0 *= invDriveSqrt;
-            spl1 *= invDriveSqrt;
+            spl0 /= driveScale;
+            spl1 /= driveScale;
         }
 
+        // Trim scales the drive level into the next DSP stage (Compressor)
         spl0 *= trimScale;
         spl1 *= trimScale;
 
