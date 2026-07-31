@@ -186,5 +186,9 @@ private:
     std::unique_ptr<juce::dsp::Oversampling<float>> oversampler;
     bool lastOversamplingState = true;
 
+    double inputRmsTracker = 0.001;
+    double outputRmsTracker = 0.001;
+    double autoMatchGain = 1.0;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AnalogFxAudioProcessor)
 };
