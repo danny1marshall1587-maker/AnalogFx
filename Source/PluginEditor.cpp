@@ -531,25 +531,118 @@ void AnalogFxAudioProcessorEditor::paint(juce::Graphics& g)
     g.setColour(juce::Colour(0xff222222));
     g.drawHorizontalLine(taskBarH - 1, 0.0f, (float)w);
 
-    // Draw Preamp BG
-    if (preType == 2 && s_bgTelefunken.isValid()) g.drawImageAt(s_bgTelefunken, 0, preY);
-    else if (preType == 3 && s_bgNevePre.isValid()) g.drawImageAt(s_bgNevePre, 0, preY);
-    else if (preType == 4 && s_bgModernPre.isValid()) g.drawImageAt(s_bgModernPre, 0, preY);
-    
-    // Draw Comp BG
-    if (compType == 2 && s_bgNC76.isValid()) g.drawImageAt(s_bgNC76, 0, compY);
-    else if (compType == 3 && s_bgLA2A.isValid()) g.drawImageAt(s_bgLA2A, 0, compY);
-    else if (compType == 4 && s_bgFairchild.isValid()) g.drawImageAt(s_bgFairchild, 0, compY);
-    else if (compType == 5 && s_bgModComp.isValid()) g.drawImageAt(s_bgModComp, 0, compY);
- 
-    // Draw EQ BG
-    if (eqType == 2 && s_bgDirtEq.isValid()) g.drawImageAt(s_bgDirtEq, 0, eqY);
-    else if (eqType == 3 && s_bgNevePre.isValid()) g.drawImageAt(s_bgNevePre, 0, eqY);
-    else if (eqType == 4 && s_bgPultec.isValid()) g.drawImageAt(s_bgPultec, 0, eqY);
-    else if (eqType == 5 && s_bgModEq.isValid()) g.drawImageAt(s_bgModEq, 0, eqY);
- 
-    // Draw Output BG
-    if (outType > 1 && s_bgOutput.isValid()) g.drawImageAt(s_bgOutput, 0, outY);
+    // --- PROCEDURAL ANALOG HARDWARE FACEPLATE RENDERER ---
+    auto drawHardwarePanel = [&](int sectionIndex, int y, int h, int type, const juce::String& sectionName) {
+        auto r = juce::Rectangle<float>(0, (float)y, (float)w, (float)h);
+
+        // 1. Determine Color Palette & Theme based on Hardware Model
+        juce::Colour panelColor = juce::Colour(0xff1a1a1a);
+        juce::Colour borderAccent = juce::Colour(0xff333333);
+        juce::String badgeText = sectionName;
+
+        if (sectionIndex == 0) { // PREAMP
+            if (type == 2) { // Telefunken V72/V76
+                panelColor = juce::Colour(0xff3d4449);
+                borderAccent = juce::Colour(0xff5c666f);
+                badgeText = "TELEFUNKEN V76 TUBE PREAMP";
+            } else if (type == 3) { // Neve 1073 Pre
+                panelColor = juce::Colour(0xff1f2933);
+                borderAccent = juce::Colour(0xff3a4a58);
+                badgeText = "NEVE 1073 PREAMP & GAIN";
+            } else if (type == 4) { // Modern
+                panelColor = juce::Colour(0xff14171a);
+                borderAccent = juce::Colour(0xff00d2ff);
+                badgeText = "BOUTIQUE DIGITAL PREAMP";
+            }
+        } else if (sectionIndex == 1) { // COMPRESSOR
+            if (type == 2) { // NC76 / 1176
+                panelColor = juce::Colour(0xff222528);
+                borderAccent = juce::Colour(0xff8a9298);
+                badgeText = "UREI 1176 LN LIMITING AMPLIFIER";
+            } else if (type == 3) { // LA-2A
+                panelColor = juce::Colour(0xffc8cfd5);
+                borderAccent = juce::Colour(0xffa2abb3);
+                badgeText = "TELETRONIX LA-2A LEVELING AMPLIFIER";
+            } else if (type == 4) { // Fairchild 670
+                panelColor = juce::Colour(0xff23272a);
+                borderAccent = juce::Colour(0xffb89648);
+                badgeText = "FAIRCHILD 670 STEREO LIMITER";
+            } else if (type == 5) { // Modern VCA
+                panelColor = juce::Colour(0xff121518);
+                borderAccent = juce::Colour(0xffff9900);
+                badgeText = "PRECISION VCA COMPRESSOR";
+            }
+        } else if (sectionIndex == 2) { // EQ
+            if (type == 2) { // Dirt EQ
+                panelColor = juce::Colour(0xff2b2520);
+                borderAccent = juce::Colour(0xff8c6038);
+                badgeText = "CUSTOM DIRT INDUCTOR EQ";
+            } else if (type == 3) { // Neve 1073 EQ
+                panelColor = juce::Colour(0xff1f2933);
+                borderAccent = juce::Colour(0xff3a4a58);
+                badgeText = "NEVE 1073 CONSOLE EQUALIZER";
+            } else if (type == 4) { // Pultec EQP-1A
+                panelColor = juce::Colour(0xff18444e);
+                borderAccent = juce::Colour(0xff2d6f7f);
+                badgeText = "PULTEC PROGRAM EQUALIZER EQP-1A";
+            } else if (type == 5) { // Modern EQ
+                panelColor = juce::Colour(0xff14171a);
+                borderAccent = juce::Colour(0xff00e5ff);
+                badgeText = "SURGICAL PARAMETRIC EQ";
+            }
+        } else if (sectionIndex == 3) { // OUTPUT
+            panelColor = juce::Colour(0xff181a1d);
+            borderAccent = juce::Colour(0xff444c56);
+            badgeText = "ANALOG TAPE & VALVE OUTPUT COLOR";
+        }
+
+        // Draw Base Panel Gradient
+        juce::ColourGradient grad(panelColor.brighter(0.08f), 0, (float)y, panelColor.darker(0.12f), 0, (float)(y + h), false);
+        g.setGradientFill(grad);
+        g.fillRect(r);
+
+        // Draw Brushed Metal Micro-Texture Lines
+        g.setColour(juce::Colours::white.withAlpha(0.02f));
+        for (int lineY = y; lineY < y + h; lineY += 3) {
+            g.drawHorizontalLine(lineY, 0.0f, (float)w);
+        }
+
+        // Draw Panel Borders & Chassis Seams
+        g.setColour(juce::Colours::black.withAlpha(0.6f));
+        g.drawHorizontalLine(y, 0.0f, (float)w);
+        g.drawHorizontalLine(y + h - 1, 0.0f, (float)w);
+
+        g.setColour(borderAccent.withAlpha(0.5f));
+        g.drawHorizontalLine(y + 1, 0.0f, (float)w);
+        g.drawHorizontalLine(y + h - 2, 0.0f, (float)w);
+
+        // Draw Rack Mounting Screws (4 corners)
+        auto drawScrew = [&](float sx, float sy) {
+            g.setColour(juce::Colour(0xff444444));
+            g.fillEllipse(sx - 5.0f, sy - 5.0f, 10.0f, 10.0f);
+            g.setColour(juce::Colour(0xff111111));
+            g.drawEllipse(sx - 5.0f, sy - 5.0f, 10.0f, 10.0f, 1.0f);
+            g.setColour(juce::Colour(0xff888888));
+            g.drawLine(sx - 3.0f, sy - 1.0f, sx + 3.0f, sy + 1.0f, 1.5f);
+        };
+        drawScrew(12.0f, y + 14.0f);
+        drawScrew((float)w - 12.0f, y + 14.0f);
+        drawScrew(12.0f, y + h - 14.0f);
+        drawScrew((float)w - 12.0f, y + h - 14.0f);
+
+        // Draw Metallic Hardware Badge Plate
+        bool isLA2A = (sectionIndex == 1 && type == 3);
+        juce::Colour textCol = isLA2A ? juce::Colour(0xff111111) : juce::Colours::white;
+        g.setColour(textCol.withAlpha(0.85f));
+        g.setFont(juce::Font(13.0f * currentScale, juce::Font::bold));
+        g.drawText(badgeText, (int)(30 * currentScale), y + (int)(10 * currentScale), (int)(400 * currentScale), (int)(20 * currentScale), juce::Justification::left);
+    };
+
+    // Render Panel Backgrounds
+    drawHardwarePanel(0, preY, preH, preType, "PREAMP");
+    drawHardwarePanel(1, compY, compH, compType, "COMPRESSOR");
+    drawHardwarePanel(2, eqY, eqH, eqType, "EQUALIZER");
+    if (outType > 1) drawHardwarePanel(3, outY, outH, outType, "OUTPUT STAGE");
 
     // Draw LED Meters
     auto drawMeter = [&](int sectionIndex, float meterValue, juce::Colour color, bool isGR = false) {
