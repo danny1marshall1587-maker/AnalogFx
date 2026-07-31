@@ -358,6 +358,17 @@ void AnalogFxAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
         numSamples = buffer.getNumSamples();
     }
 
+    // --- MEASURE INPUT RMS FOR GLOBAL AUTO VOLUME MATCHING ---
+    double inSum = 0.0;
+    for (int i = 0; i < numSamples; ++i)
+    {
+        double s0 = leftChannel[i];
+        double s1 = rightChannel[i];
+        inSum += s0 * s0 + s1 * s1;
+    }
+    double currentInRms = std::sqrt(inSum / std::max(1, numSamples * 2));
+    inputRmsTracker = inputRmsTracker * 0.95 + currentInRms * 0.05;
+
     // --- 1. PREAMP STAGE ---
     PreampDSP::Parameters preParams;
     preParams.type = preTypePtr->load();
@@ -533,6 +544,30 @@ void AnalogFxAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce
     outParams.drive = outputDrivePtr->load();
     outParams.safe_level = outputSafePtr->load();
     outputColor.process(leftChannel, rightChannel, numSamples, outParams);
+
+    // --- 4b. GLOBAL AUTOMATIC VOLUME MATCHING ---
+    double outSum = 0.0;
+    for (int i = 0; i < numSamples; ++i)
+    {
+        double s0 = leftChannel[i];
+        double s1 = rightChannel[i];
+        outSum += s0 * s0 + s1 * s1;
+    }
+    double currentOutRms = std::sqrt(outSum / std::max(1, numSamples * 2));
+    outputRmsTracker = outputRmsTracker * 0.95 + currentOutRms * 0.05;
+
+    if (inputRmsTracker > 0.0001 && outputRmsTracker > 0.0001)
+    {
+        double targetGain = inputRmsTracker / outputRmsTracker;
+        targetGain = std::clamp(targetGain, 0.1, 8.0);
+        
+        for (int i = 0; i < numSamples; ++i)
+        {
+            autoMatchGain += (targetGain - autoMatchGain) * 0.001;
+            leftChannel[i] = static_cast<float>(leftChannel[i] * autoMatchGain);
+            rightChannel[i] = static_cast<float>(rightChannel[i] * autoMatchGain);
+        }
+    }
 
     // --- 5. DOWNSAMPLING ---
     if (oversamplingEnabled)
