@@ -1,4 +1,10 @@
 cmake_minimum_required(VERSION 3.20)
+
+if(APPLE)
+    set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "" FORCE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "" FORCE)
+endif()
+
 project(AnalogFx VERSION 1.0.0)
 
 # Fetch JUCE
@@ -6,8 +12,7 @@ include(FetchContent)
 FetchContent_Declare(
     juce
     GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
-    GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
-    GIT_TAG 7.0.12
+    GIT_TAG 8.0.12
 )
 FetchContent_MakeAvailable(juce)
 
